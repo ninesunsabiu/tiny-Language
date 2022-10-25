@@ -1,0 +1,29 @@
+{
+  "name": "tiny-language",
+  "version": "0.0.1",
+  "description": "《程序语言理论与实现》公开课 实践练习小仓库",
+  "main": "Main.bs.js",
+  "type": "module",
+  "scripts": {
+    "clean": "rescript clean",
+    "build": "rescript build",
+    "watch": "rescript build -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ninesunsabiu/tiny-Language.git"
+  },
+  "keywords": [
+    "PL",
+    "Compile"
+  ],
+  "author": "Ezio Lin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ninesunsabiu/tiny-Language/issues"
+  },
+  "homepage": "https://github.com/ninesunsabiu/tiny-Language#readme",
+  "devDependencies": {
+    "rescript": "^10.0.1"
+  }
+}
