@@ -72,12 +72,30 @@ module Nameless = {
     | Let(x, e1, e2) => Let(comp(e1, cenv), comp(e2, list{x, ...cenv}))
     }
   }
+
+  let rec show = expr => {
+    switch expr {
+    | Cst(i) => "Cst(" ++ i->Belt.Int.toString ++ ")"
+    | Add(a, b) => "Add(" ++ show(a) ++ "," ++ show(b) ++ ")"
+    | Mul(a, b) => "Mul(" ++ show(a) ++ "," ++ show(b) ++ ")"
+    | Let(a, b) => "Let(" ++ show(a) ++ "," ++ show(b) ++ ")"
+    | Var(a) => "Var(" ++ a->Belt.Int.toString ++ ")"
+    }
+  }
 }
 
+// 作业 1
+// Write an interpreter for the stack machine with variables
 module StackMachineWithVar = {
+  // 栈式虚拟机支持的指令集
+  // 为了支持变量名的寻址 需要增加 Var(int) | Pop | Swap 操作
   type instr = Cst(int) | Add | Mul | Var(int) | Pop | Swap
+  // 所有指令 是一个列表
   type instrs = list<instr>
+  // 操作数
   type operand = int
+  // 操作数的栈，对于一个 表达式 expr 来说 结束时栈顶元素的值就是表达式的值
+  // 要遵守栈平衡原则
   type stack = list<operand>
 
   let rec eval = (instrs: instrs, stk: stack) => {
@@ -94,4 +112,55 @@ module StackMachineWithVar = {
   }
 
   let interpret = instr => instr->eval(list{})
+
+  let show = expr => {
+    switch expr {
+    | Cst(i) => "Cst(" ++ i->Belt.Int.toString ++ ");"
+    | Add => "Add;"
+    | Mul => "Mul;"
+    | Pop => "Pop;"
+    | Swap => "Swap;"
+    | Var(a) => "Var(" ++ a->Belt.Int.toString ++ ");"
+    }
+  }
 }
+
+// Write a compiler to translate to stack machine instructions
+// 将 Nameless.expr 转换到 栈式虚拟机中
+let namelessExprToStackVM = (expr: Nameless.expr): StackMachineWithVar.instrs => {
+  open Belt.List
+  open StackMachineWithVar
+  let rec compileToInstr = (expr: Nameless.expr) => {
+    switch expr {
+    | Nameless.Cst(i) => list{Cst(i)}
+    | Nameless.Add(a, b) => concatMany([compileToInstr(a), compileToInstr(b), list{Add}])
+    | Nameless.Mul(a, b) => concatMany([compileToInstr(a), compileToInstr(b), list{Mul}])
+    | Nameless.Var(i) => list{Var(i)}
+    | Nameless.Let(a, b) => concatMany([compileToInstr(a), compileToInstr(b), list{Swap, Pop}])
+    }
+  }
+
+  expr->compileToInstr
+}
+
+// let namedExpr = {
+//   open Named
+//   Let("x", Add(Cst(1), Cst(3)), Let("y", Cst(10), Add(Var("x"), Var("y"))))
+// }
+
+// // namedExpr->Named.eval(list{})->Js.log
+// Js.log("nameless: ")
+// namedExpr->Nameless.comp(list{})->Nameless.show->Js.log
+
+
+// let namelessExpr = {
+//   open Named
+//   Let("x", Cst(17), Add(Var("x"), Let("y", Var("x"), Mul(Cst(3), Add(Var("y"), Cst(4))))))
+//   // Let(Cst(17),Add(Var(0),Let(Var(0),Mul(Cst(3),Add(Var(0),Cst(4))))))
+// }->Nameless.comp(list{})
+// Js.log2("nameless expr:", Nameless.show(namelessExpr))
+
+// namelessExpr->namelessExprToStackVM
+// ->ShowableList.show(StackMachineWithVar.show, _)
+// ->Js.log2("stack machine instr", _)
+// // Cst(17);Var(0);Var(0);Cst(3);Var(0);Cst(4);Add;Mul;Swap;Pop;Add;Swap;Pop;
