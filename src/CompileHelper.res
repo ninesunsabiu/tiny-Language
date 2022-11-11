@@ -7,10 +7,11 @@ type env = list<varType>
 let indexInEnv = (i, env) => {
   let rec findNthLocalVar = (findedCount, idx, env) => {
     switch env {
-    | list{} => raise (Not_found)
+    | list{} => raise(Not_found)
     | list{STmp, ...tail} => findNthLocalVar(findedCount, idx + 1, tail)
-    | list{SLocal, ...tail} => findedCount === 0 ? idx : findNthLocalVar(findedCount - 1, idx + 1, tail)
-    } 
+    | list{SLocal, ...tail} =>
+      findedCount === 0 ? idx : findNthLocalVar(findedCount - 1, idx + 1, tail)
+    }
   }
 
   findNthLocalVar(i, 0, env)
