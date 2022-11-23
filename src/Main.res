@@ -26,3 +26,31 @@ addNamedExpr
     eval(App(Fn("y", Fn("x", App(Var("x"), Var("y")))), Fn("y", Fn("x", App(Var("x"), Var("y")))))),
   )
 }->Js.log2("after eval lambda is", _)
+
+{
+  open Lambda
+  let expr = App(Fn("a", Fn("b", Fn("c", App(Fn("d", Var("c")), Var("b"))))), Var("h"))
+
+  show(expr)->Js.log2("lambda is ", _)
+
+  getFreeVar(expr)
+  ->ShowableList.show(it => "(" ++ it ++ ")", _)
+  ->Js.log2("here is free Variable", _)
+}
+
+{
+  open Lambda
+  let x = Var("x")
+  let y = Fn("y", x)
+  let z = App(y, x)
+
+  let expr = Fn("x", App(App(x, y), z))
+
+  let n = App(z, x)
+
+  let newExpr = subst("a", n, expr)
+  Js.log2("origin expr", show(expr))
+  Js.log2("subst [n/a] and n is", show(n))
+  getFreeVar(n)->ShowableList.show(it => "(" ++ it ++ ")", _)->Js.log2("free Variable in n", _)
+  Js.log2("subst ret", show(newExpr))
+}

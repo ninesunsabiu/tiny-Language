@@ -21,6 +21,23 @@ let show = l => {
   go(l, 0)
 }
 
+// 从一个 expr 中得到自由变量列表
+let getFreeVar = expr => {
+  let rec go = (ans, expr) => {
+    switch expr {
+    | Var(a) => list{a, ...ans}
+    | Fn(arg, body) => go(ans, body)->Belt.List.keep(it => it !== arg) // 排除掉绑定变量 arg
+
+    | App(fn, param) => go(go(ans, fn), param)
+    }
+  }
+  go(list{}, expr)
+}
+
+// 返回一个新的标识符
+// getNewSymbol(i) !== i
+let getNewSymbol = i => i ++ "_"
+
 // expr2[expr1/s] 在表达式2中 用 表达式1 把 s 给替换掉
 // s, expr2 一般是一个 lambda fn
 // 这个过程 感觉有点像 贝塔规约
@@ -31,8 +48,23 @@ let rec subst = (s, expr1, expr2) => {
   switch expr2 {
   | Var(ss) if ss === s => expr1 // 找到替换的目标 则 Var(ss) 换成 expor1
   | Var(_) => expr2 // 没得换 直接返回 expor2
-  | Fn(ss, e) if ss !== s => Fn(ss, substitution(e)) // 如果 expr2 是个函数定义 并且参数没有和要替换的相同 替换 body 部份 并且保留参数 ss
-  | Fn(_, _) => expr2 // 要替换的参数 s 由于内部 expr2 遮蔽了,所以也换不得;同名但是不同含义
+  | Fn(arg, body) =>
+    // Think about how substitution works on arbitrary terms, i.e. N[M/x] where M could contain free variables.
+    if arg === s {
+      // 否则如果绑定变量和当前替换的 s 相等的话，产生遮蔽的效果，替换不了了 原样返回
+      expr2
+    } else if getFreeVar(expr1)->Belt.List.has(arg, String.equal) {
+      // 如果 body 中绑定变量 arg 和 expr1 中有命名冲突需要进行处理
+      let symbol = getNewSymbol(arg)
+      let newBody = subst(arg, Var(symbol), body)
+      // 基于新的
+      Fn(symbol, substitution(newBody))
+    } else if arg !== s {
+      // 如果绑定变量和当前替换的 s 不相等的话，直接穿透 在 body 继续替换
+      Fn(arg, substitution(body))
+    } else {
+      assert false
+    }
   | App(a, b) => App(substitution(a), substitution(b)) // a,b 递归处理即可
   }
 }
