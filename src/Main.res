@@ -18,3 +18,11 @@ addNamedExpr
 ->Nameless.comp(list{})
 ->Nameless.eval(list{})
 ->Js.log2("result fn nameless expr result", _) // output 3
+
+{
+  open Lambda
+  // λy.λx.xy(λy.λx.xy) => λx.x(λy.λx.xy)
+  show(
+    eval(App(Fn("y", Fn("x", App(Var("x"), Var("y")))), Fn("y", Fn("x", App(Var("x"), Var("y")))))),
+  )
+}->Js.log2("after eval lambda is", _)
