@@ -122,9 +122,9 @@ Js.Console.log(peano_decode(exp(three, two))) // 9
   // λfx.fx
   let church_one = Fn("f", Fn("x", App(Var("f"), Var("x"))))
   // λfx.f(fx)
-  let church_two = Fn("f", Fn("x", App(App(Var("f"), Var("f")), Var("x"))))
+  let church_two = Fn("f", Fn("x", App(Var("f"), App(Var("f"), Var("x")))))
   // λfx.f(f(fx))
-  let church_three = Fn("f", Fn("x", App(App(App(Var("f"), Var("f")), Var("f")), Var("x"))))
+  let church_three = Fn("f", Fn("x", App(Var("f"), App(Var("f"), App(Var("f"), Var("x"))))))
 
   let constTrue = Fn("x", Fn("y", Var("x")))
   let constFalse = Fn("x", Fn("y", Var("y")))
@@ -162,5 +162,9 @@ Js.Console.log(peano_decode(exp(three, two))) // 9
     Fn("n", App(fst, App(App(Var("n"), f), pc0)))
   }
 
+  // λf.λx.f ((λf.λx.f ((λf.λx.x) f x)) f x)
+  // <=> λf.λx.f(fx)
+  // <=> church_two
   eval(App(pred, church_three))->show->Js.log2("pred lambda", _)
+
 }
