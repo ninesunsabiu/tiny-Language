@@ -153,29 +153,14 @@ Js.Console.log(peano_decode(exp(three, two))) // 9
 
   eval(App(fst, App(App(pair, church_one), church_two)))->show->Js.log2("fst pair one two", _)
 
-  let pred = Fn(
-    "n",
-    App(
-      fst,
-      App(
-        App(
-          Var("n"),
-          Fn(
-            "p",
-            {
-              let p = Var("p")
-              let sndP = App(snd, p)
-              let pairSndP = App(pair, sndP)
-              let succSndP = App(successor, sndP)
-              App(pairSndP, succSndP)
-            },
-          ),
-        ),
-        App(App(pair, church_zero), church_zero),
-      ),
-    ),
-  )
+  let pred = {
+    let f = Fn("p", {
+      let secondP = App(snd, Var("p"))
+      App(App(pair, secondP), App(successor, secondP))
+    })
+    let pc0 = App(App(pair, church_zero), church_zero) 
+    Fn("n", App(fst, App(App(Var("n"), f), pc0)))
+  }
 
-  // FIXME 这里算出来 和 church_three 不等价
-  eval(App(pred, App(successor, church_three)))->show->Js.log2("pred lambda", _)
+  eval(App(pred, church_three))->show->Js.log2("pred lambda", _)
 }
