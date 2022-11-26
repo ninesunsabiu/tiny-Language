@@ -49,7 +49,8 @@ let rec peano_add = (n: nat, m: nat): nat => {
 let rec peano_mul = (n: nat, m: nat): nat => {
   switch n {
   | Z => Z
-  | S(n') => // n * m <=> ((n - 1) + 1) * m <=> (n - 1) * m + m
+  | S(n') =>
+    // n * m <=> ((n - 1) + 1) * m <=> (n - 1) * m + m
     peano_add(peano_mul(n', m), m)
   }
 }
@@ -58,7 +59,7 @@ let rec peano_mul = (n: nat, m: nat): nat => {
 let church_add = (n: cnum<_>, m: cnum<_>): cnum<_> => (f, x) => n(f, m(f, x))
 
 // let constTrue = (x, _) => x
-// let constFase = (_, y) => y
+// let constFalse = (_, y) => y
 // let ifThenElse = (x) => x
 
 // // isZero(church_zero) => T
@@ -112,3 +113,69 @@ Js.Console.log(peano_decode(two)) // 2
 Js.Console.log(peano_decode(add(three, two))) // 5
 Js.Console.log(peano_decode(mul(three, two))) // 6
 Js.Console.log(peano_decode(exp(three, two))) // 9
+
+{
+  open Lambda
+
+  // λfx.x
+  let church_zero = Fn("f", Fn("x", Var("x")))
+  // λfx.fx
+  let church_one = Fn("f", Fn("x", App(Var("f"), Var("x"))))
+  // λfx.f(fx)
+  let church_two = Fn("f", Fn("x", App(App(Var("f"), Var("f")), Var("x"))))
+  // λfx.f(f(fx))
+  let church_three = Fn("f", Fn("x", App(App(App(Var("f"), Var("f")), Var("f")), Var("x"))))
+
+  let constTrue = Fn("x", Fn("y", Var("x")))
+  let constFalse = Fn("x", Fn("y", Var("y")))
+  let ifThenElse = Fn("x", Var("x"))
+
+  // λnfx.f(nfx)
+  // succ zero => (λnfx.f(nfx))(λfx.x) => λfx.f((λfx.x)fx) => λfx.fx => one
+  // succ one => (λnfx.f(nfx))(λfx.fx) => λfx.f((λfx.fx)fx) => λfx.f(fx)
+  let successor = Fn("n", Fn("f", Fn("x", App(Var("f"), App(App(Var("n"), Var("f")), Var("x"))))))
+  eval(App(successor, church_two))->show->Js.log2("succ church_two", _)
+
+  // λnmfx.nf(mfx)
+  // add one two => λfx.(one)f((two)fx) => λfx.(λx.fx)(f(fx)) => λfx.f(f(fx))
+  let add = Fn(
+    "n",
+    Fn("m", Fn("f", Fn("x", App(App(Var("n"), Var("f")), App(App(Var("m"), Var("f")), Var("x")))))),
+  )
+  eval(App(App(add, church_one), church_two))->show->Js.log2("add one two", _)
+
+  let iszero = Fn("n", App(App(Var("n"), Fn("z", constFalse)), constTrue))
+  eval(App(iszero, church_one))->show->Js.log2("is zero", _)
+
+  let pair = Fn("x", Fn("y", Fn("z", App(App(Var("z"), Var("x")), Var("y")))))
+  let fst = Fn("p", App(Var("p"), constTrue))
+  let snd = Fn("p", App(Var("p"), constFalse))
+
+  eval(App(fst, App(App(pair, church_one), church_two)))->show->Js.log2("fst pair one two", _)
+
+  let pred = Fn(
+    "n",
+    App(
+      fst,
+      App(
+        App(
+          Var("n"),
+          Fn(
+            "p",
+            {
+              let p = Var("p")
+              let sndP = App(snd, p)
+              let pairSndP = App(pair, sndP)
+              let succSndP = App(successor, sndP)
+              App(pairSndP, succSndP)
+            },
+          ),
+        ),
+        App(App(pair, church_zero), church_zero),
+      ),
+    ),
+  )
+
+  // FIXME 这里算出来 和 church_three 不等价
+  eval(App(pred, App(successor, church_three)))->show->Js.log2("pred lambda", _)
+}
