@@ -8,7 +8,7 @@ let peano_two = S(S(Z))
 // Church numbers
 type cnum<'a> = ('a => 'a, 'a) => 'a
 
-let church_zero = (s, z) => z
+let church_zero = (_, z) => z
 let church_one = (s, z) => s(z)
 let church_two = (s, z) => s(s(z))
 let church_three = (s, z) => s(s(s(z)))
@@ -154,11 +154,14 @@ Js.Console.log(peano_decode(exp(three, two))) // 9
   eval(App(fst, App(App(pair, church_one), church_two)))->show->Js.log2("fst pair one two", _)
 
   let pred = {
-    let f = Fn("p", {
-      let secondP = App(snd, Var("p"))
-      App(App(pair, secondP), App(successor, secondP))
-    })
-    let pc0 = App(App(pair, church_zero), church_zero) 
+    let f = Fn(
+      "p",
+      {
+        let secondP = App(snd, Var("p"))
+        App(App(pair, secondP), App(successor, secondP))
+      },
+    )
+    let pc0 = App(App(pair, church_zero), church_zero)
     Fn("n", App(fst, App(App(Var("n"), f), pc0)))
   }
 
@@ -167,4 +170,64 @@ Js.Console.log(peano_decode(exp(three, two))) // 9
   // <=> church_two
   eval(App(pred, church_three))->show->Js.log2("pred lambda", _)
 
+  let mul = {
+    let yCombinator = {
+      Fn(
+        "f",
+        App(
+          Fn("x", App(Var("f"), App(Var("x"), Var("x")))),
+          App(Var("f"), App(Var("x"), Var("x"))),
+        ),
+      )
+    }
+
+    let f = {
+      Fn(
+        "f",
+        Fn(
+          "n",
+          Fn(
+            "m",
+            App(
+              // if(n=0) then 0
+              App(App(ifThenElse, App(iszero, Var("n"))), church_zero),
+              // else (m + f(n - 1)m)
+              App(
+                App(add, Var("m")),
+                {
+                  let predN = App(pred, Var("n"))
+                  App(App(Var("f"), predN), Var("m"))
+                },
+              ),
+            ),
+          ),
+        ),
+      )
+    }
+
+    App(yCombinator, f)
+  }
+
+  let churchNumberToInt = e => {
+    let rec go = (ans, exp) => {
+      switch exp {
+      | Fn(_, _) as n => if n == church_zero {
+          ans
+        } else {
+          go(ans + 1, eval(App(pred, n)))
+        }
+
+      | _ => assert false
+      }
+    }
+    go(0, eval(e))
+  }
+
+  churchNumberToInt(App(App(add, church_two), church_three))
+  ->Js.Int.toString
+  ->Js.log2("add 2 3 is", _)
+  churchNumberToInt(App(App(add, church_three), church_two))
+  ->Js.Int.toString
+  ->Js.log2("add 3 2 is", _)
+  churchNumberToInt(App(pred, church_three))->Js.Int.toString->Js.log2("pred 3 is", _)
 }
