@@ -211,7 +211,8 @@ Js.Console.log(peano_decode(exp(three, two))) // 9
   let churchNumberToInt = e => {
     let rec go = (ans, exp) => {
       switch exp {
-      | Fn(_, _) as n => if n == church_zero {
+      | Fn(_, _) as n =>
+        if n == church_zero {
           ans
         } else {
           go(ans + 1, eval(App(pred, n)))
